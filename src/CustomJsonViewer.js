@@ -7,37 +7,33 @@ class CustomJsonViewer extends React.Component {
         super(props);
         this.state = {
             path: [],
-            jsonData : {
-                "name": 'ss',
-                "glossary": {
-                    "title": "example glossary",
-                    "GlossDiv": {
-                        "title": "S",
-                        "GlossList": {
-                            "GlossEntry": {
-                                "ID": "SGML",
-                                "SortAs": "SGML",
-                                "GlossTerm": "Standard Generalized Markup Language",
-                                "Acronym": "SGML",
-                                "Abbrev": "ISO 8879:1986",
-                                "GlossDef": {
-                                    "para": "A meta-markup language, used to create markup languages such as DocBook.",
-                                    "GlossSeeAlso": ["GML", "XML", "GM1", "XM2"],
-                                },
-                                "GlossSee": "markup"
-                            }
-                        }
-                    }
-                }
-            },
+            jsonData : {},
             tableData : {},
         }
 
     }
 
-    // componentDidMount() {
-    //     this.setTableData("", this.state.jsonData)
-    // }
+    componentDidMount() {
+        this.fetchBulkJson();
+    }
+
+    fetchBulkJson() {
+        fetch("http://127.0.0.1:8081/fds/bulk-json")
+            .then(res => res.json())
+            .then(
+                (result) => {
+                    this.setState({
+                        jsonData: result,
+                    });
+                },
+                (error) => {
+                    this.setState({
+                        isLoaded: true,
+                        error
+                    });
+                }
+            )
+    }
 
     setTableData(path, tableData) {
         this.setState({tableData : tableData, path : path})
@@ -46,10 +42,12 @@ class CustomJsonViewer extends React.Component {
 
     render() {
         let tableContent = [];
+        let tableDetailView = {};
         let tableData = this.state.tableData;
 
         Object.keys(tableData).forEach((key, index) => {
             if(!(tableData[key] instanceof Object)) {
+                tableDetailView[key] = tableData[key]
                 tableContent.push(<tr><td>{key}</td><td><input type="text" name={""} value={tableData[key]} onChange={(e) => {
                     tableData[key] = e.target.value
                     this.setState({
@@ -62,7 +60,7 @@ class CustomJsonViewer extends React.Component {
         return (
             <div className={"row"}>
                 <div className={"col-sm-3"}>
-                    <div className="content-viewer">
+                    <div className="content-viewer" style={{ overflow: "auto", marginRight: 20}}>
                         <h5><b>JSON Tree</b><br/></h5>
                         <JSONTree data={this.state.jsonData}
                                   //hideRoot={true}
@@ -97,7 +95,7 @@ class CustomJsonViewer extends React.Component {
                         <h5><b>Full Json Data</b></h5>
                         <br/>
                         {
-                            JSON.stringify(this.state.jsonData)
+                            JSON.stringify(tableDetailView)
                         }
                     </div>
                 </div>
