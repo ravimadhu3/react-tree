@@ -94,29 +94,48 @@ class CustomJsonViewer extends React.Component {
 
         Object.keys(tableData).forEach((key, index) => {
             if(!(tableData[key] instanceof Object)) {
-                tableDetailView[key] = tableData[key]
+                tableDetailView[key] = tableData[key];
 
-                let component = <tr><td>{key}</td><td><input type="text" name={""} value={tableData[key]} onChange={(e) => {
+                let disabled = "";
+                let ddValueSelectBox = null;
+
+                if(tableRules != undefined && tableRules != null && Object.keys(tableRules).length > 0){
+                    let rules = tableRules[key];
+                    if(rules != undefined && rules != null && Object.keys(rules).length > 0){
+                        if(rules["isEdit"] != undefined && rules["isEdit"] != null){
+                            if(rules["isEdit"] == "No"){
+                                disabled = "disabled"
+                            }
+                        }
+                        if(rules["ddvalues"] != undefined && rules["ddvalues"] != null && Object.keys(rules["ddvalues"]).length > 0){
+                            let ddvalues = rules["ddvalues"];
+                            let ddOptionList = [];
+                            Object.keys(ddvalues).forEach((key) => {
+                                let selectBoxOption = ddvalues[key];
+                                ddOptionList.push(<option value={selectBoxOption}>{selectBoxOption}</option>)
+                            });
+                            if(ddOptionList.length>0){
+                                ddValueSelectBox = <select name="" id="" onChange={(e) => {
+                                    tableData[key] = e.target.value
+                                    this.setState({
+                                        tableData: tableData
+                                    })
+                                }}>
+                                    <option value="">Select</option>
+                                    {ddOptionList}
+                                </select>
+                            }
+                        }
+                    }
+                }
+                let component = <tr><td>{key}</td><td><input type="text" name={""} disabled={disabled} value={tableData[key]} onChange={(e) => {
                     tableData[key] = e.target.value
                     this.setState({
                         tableData: tableData
                     })
                 }
-                }/></td></tr>;
+                }/> {ddValueSelectBox} </td></tr>;
 
-                if(tableRules != undefined && tableRules != null && Object.keys(tableRules).length > 0){
-                    let rules = tableRules[key];
-                    if(rules != undefined && rules != null && Object.keys(rules).length > 0){
-                        if(rules["isEdit"] == "No")
-                        component = <tr><td>{key}</td><td><input type="text" disabled name={""} value={tableData[key]} onChange={(e) => {
-                            tableData[key] = e.target.value
-                            this.setState({
-                                tableData: tableData
-                            })
-                        }
-                        }/></td></tr>;
-                    }
-                }
                 tableContent.push(component)
             }
         });
