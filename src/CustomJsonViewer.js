@@ -23,7 +23,7 @@ class CustomJsonViewer extends React.Component {
 
     fetchBulkJson() {
         this.setState({loading : 1, jsonData : {}})
-        fetch("http://127.0.0.1:8081/fds/bulk-json")
+        fetch("http://127.0.0.1:8082/fds/bulk-json")
             .then(res => res.json())
             .then(
                 (result) => {
@@ -45,7 +45,7 @@ class CustomJsonViewer extends React.Component {
 
     fetchRulesJson() {
         this.setState({ jsonRules : {}})
-        fetch("http://127.0.0.1:8081/fds/rules-json")
+        fetch("http://127.0.0.1:8082/fds/rules-json")
             .then(res => res.json())
             .then(
                 (result) => {
@@ -86,6 +86,58 @@ class CustomJsonViewer extends React.Component {
         this.setState({pathHierarchy : path, tableRules : tableRules})
     }
 
+    handleChangeFile(event, fileUploadUrl)
+    {
+        let file = event.target.files[0];
+        let formData = new FormData();
+        formData.append('file1', file);
+        fetch(fileUploadUrl, {
+            method: "POST",
+            mode: 'cors',
+            redirect: 'follow',
+            body: formData,
+        }).then(
+            function (response) {
+                return response.json();
+            }
+        ).then(json => {
+            // For refresh json
+            this.fetchBulkJson();
+            return json.response;
+        }).catch(error => console.log(error));
+    }
+
+    submitChanges()
+    {
+        let that = this;
+        var jsonData = this.state.jsonData;
+        if(jsonData!=null && jsonData!=undefined && jsonData!="" && Object.keys(jsonData).length > 0)
+        {
+            var postJson ={
+                jsonData : jsonData
+            }
+            fetch("http://127.0.0.1:8082/fds/merge-bulk-json", {
+                method: 'POST',
+                mode: 'cors',
+                redirect: 'follow',
+                body: JSON.stringify(postJson),
+                headers: new Headers({
+                    'Content-Type': 'application/json',
+                })
+            }).then(
+                function (response) {
+                    return response.json();
+                }
+            ).then(function (dataresponse) {
+                that.fetchBulkJson();
+                return dataresponse;
+            });
+        }
+        else {
+            alert("Invalid Data")
+        }
+    }
+
     render() {
         let tableContent = [];
         let tableDetailView = {};
@@ -98,6 +150,7 @@ class CustomJsonViewer extends React.Component {
 
                 let disabled = "";
                 let ddValueSelectBox = null;
+                let fileUpload = null;
 
                 if(tableRules != undefined && tableRules != null && Object.keys(tableRules).length > 0){
                     let rules = tableRules[key];
@@ -126,15 +179,24 @@ class CustomJsonViewer extends React.Component {
                                 </select>
                             }
                         }
+                        if(rules["fileUploadUrl"] != undefined && rules["fileUploadUrl"] != null && rules["fileUploadUrl"] != "") {
+                            fileUpload = <p><input type="file" onChange={(event) => this.handleChangeFile(event, rules["fileUploadUrl"])}/></p>
+                        }
                     }
                 }
-                let component = <tr><td>{key}</td><td><input type="text" name={""} disabled={disabled} value={tableData[key]} onChange={(e) => {
-                    tableData[key] = e.target.value
-                    this.setState({
-                        tableData: tableData
-                    })
-                }
-                }/> {ddValueSelectBox} </td></tr>;
+
+                var component = <tr><td>{key}</td><td>
+                    {
+                        fileUpload != null ? fileUpload : <input type="text" name={""} disabled={disabled} value={tableData[key]} onChange={(e) => {
+                            tableData[key] = e.target.value
+                            this.setState({
+                                tableData: tableData
+                            })
+                        }
+                        }/>
+                    }
+
+                {ddValueSelectBox} </td></tr>;
 
                 tableContent.push(component)
             }
@@ -144,6 +206,13 @@ class CustomJsonViewer extends React.Component {
                 <div className={"row"}>
                     <div className={"col-sm-3"}>
                         <input type="button" onClick={()=>this.fetchBulkJson()} value={"Get Data"}/> <br/><br/>
+                    </div>
+                    <div className={"col-sm-7"}>
+                    </div>
+                    <div className={"col-sm-2"}>
+                        <input type="button" onClick={()=>{
+                            this.submitChanges()
+                        }} className={"btn btn-primary"} style={{ margin : 0, padding: 10 }} value={"Save Changes"}/> <br/><br/>
                     </div>
                 </div>
                 <div className={"row"}>
@@ -188,6 +257,11 @@ class CustomJsonViewer extends React.Component {
                             <h5><b>Full Path</b></h5>
                             {
                                 JSON.stringify(this.state.pathHierarchy)
+                            }
+                            <br/><br/>
+                            <h5><b>Full Data</b></h5>
+                            {
+                                JSON.stringify(this.state.jsonData)
                             }
                             <br/><br/>
                             <h5><b>Full Json Data</b></h5>
