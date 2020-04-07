@@ -13,7 +13,8 @@ class CustomJsonViewer extends React.Component {
             tableData : {},
             tableRules : {},
             pathHierarchy : [],
-            viewText : 0
+            viewText : 0,
+            hideSection3 : false
         }
 
     }
@@ -70,7 +71,9 @@ class CustomJsonViewer extends React.Component {
 
     setTableRule(path) {
         let jsonRules = this.state.jsonRules;
+        let jsonData = this.state.jsonData;
         let tableRules = jsonRules
+        let tableData = jsonData
         if(path.length > 0) {
             for(let k = path.length - 1; k >= 0  ; k--){
                 console.warn(path.length + "Path ---> " + k + "--->" + path[k])
@@ -83,6 +86,15 @@ class CustomJsonViewer extends React.Component {
                     tableRules = tableRules[path[k]]
                 }
             }
+        }
+        if(path.length > 0) {
+            for(let k = path.length - 1; k >= 0  ; k--){
+                console.warn(path.length + "Path ---> " + k + "--->" + path[k])
+                if(tableData != undefined && path[k] != "root") {
+                    tableData = tableData[path[k]]
+                }
+            }
+            this.setTableData("", tableData)
         }
         this.setState({pathHierarchy : path, tableRules : tableRules})
     }
@@ -136,6 +148,14 @@ class CustomJsonViewer extends React.Component {
         }
         else {
             alert("Invalid Data")
+        }
+    }
+
+    hideSection3 = type =>{
+        if(type === "debug"){
+            this.setState({hideSection3 : false})
+        }else if(type === "hide3"){
+            this.setState({hideSection3 : true})
         }
     }
 
@@ -207,23 +227,35 @@ class CustomJsonViewer extends React.Component {
                     <div className={"col-sm-3"}>
                         <input type="button" onClick={()=>this.fetchBulkJson()} value={"Get Data"}/> <br/><br/>
                     </div>
-                    <div className={"col-sm-7"}>
+                    <div className={"col-sm-6"}>
                     </div>
-                    <div className={"col-sm-2"}>
+                    <div className={"col-sm-3"} style={{display: "inherit", float : "left"}}>
                         <input type="button" onClick={()=>{
                             this.submitChanges()
-                        }} className={"btn btn-primary"} style={{ margin : 0, padding: 10 }} value={"Save Changes"}/> <br/><br/>
+                        }} className={"btn btn-primary"} style={{ height: 50,  margin : 0, padding: 10 }} value={"Save Changes"}/> <br/><br/>
+                        &nbsp;
+                        {
+                            this.state.hideSection3 ?
+                                <input type="button" onClick={()=>{
+                                    this.hideSection3("debug")
+                                }} className={"btn btn-primary"} style={{ height: 50,  margin : 0, padding: 10 }} value={"View Debug"}/>
+                                :
+                                null
+                        }
                     </div>
                 </div>
                 <div className={"row"}>
                     <div className={"col-sm-3"}>
-                        <div className="content-viewer" style={{ overflow: "auto", marginRight: 20}}>
+                        <div className="content-viewer" style={{ overflow: "auto", marginRight: 20,wordWrap: 'anywhere'}}>
                             <h5><b>JSON Tree</b><br/></h5>
                             {
                                 Object.keys(this.state.jsonData).length > 0 ? <JSONTree data={this.state.jsonData}
                                     //hideRoot={true}
                                                                                         shouldExpandNode={()=>false}
                                                                                         theme={{
+                                                                                            scheme: 'monokai',
+                                                                                            author: 'wimer hazenberg (http://www.monokai.nl)',
+                                                                                            base00: '#272822',
                                                                                             valueLabel: {
                                                                                                 display :"none",
                                                                                             },
@@ -233,17 +265,21 @@ class CustomJsonViewer extends React.Component {
                                                                                         }}
                                                                                         valueRenderer={raw => <span onClick={()=> alert(raw)}>{raw}</span>}
                                                                                         labelRenderer={raw => <span onClick={()=> this.setTableRule(raw)}>{raw[0]}</span>}
-                                                                                        getItemString={(type, data, itemType, itemString) => <span onClick={()=> this.setTableData("", data)}>{itemType} {itemString} View </span> }
+                                                                                        getItemString={(type, data, itemType, itemString) =>
+                                                                                            <span onClick={()=> this.setTableData("", data)}>
+                                                                            {/*{itemType} {itemString} View*/}
+                                                                        </span>
+                                                                                        }
                                 /> :  <span>Loading...</span>
                             }
 
                         </div>
                     </div>
-                    <div className={"col-sm-6"}>
+                    <div className={ this.state.hideSection3 === false ? "col-sm-6" : "col-sm-9" }>
                         <div className="content-viewer" style={{ overflow: "auto", marginRight: 20}}>
                             <h2><b>{this.state.pathHierarchy.length > 0 ? this.state.pathHierarchy[0] : null}</b></h2><br/>
                             {
-                                tableContent.length>0 ? <table border="1" cellPadding={"15"}>
+                                tableContent.length>0 ? <table border="1" cellPadding={"15"} style={this.state.hideSection3 === false ? {width : "auto"} : {width : "100%"}}>
                                     <tr><td style={{fontWeight: 'bold'}}>Key</td><td style={{fontWeight: 'bold'}}>Value</td></tr>
                                     {
                                         tableContent
@@ -252,30 +288,41 @@ class CustomJsonViewer extends React.Component {
                             }
                         </div>
                     </div>
-                    <div className={"col-sm-3"}>
-                        <div className="content-viewer" style={{ overflow: "auto", marginRight: 20, wordWrap: 'break-word'}}>
-                            <h5><b>Full Path</b></h5>
-                            {
-                                this.state.viewText == 1 ? <p> <a href="javascript:void(0)" onClick={()=>this.setState({viewText: 0})}>Hide</a> {JSON.stringify(this.state.pathHierarchy)}</p>  : <a href="javascript:void(0)" onClick={()=>this.setState({viewText: 1})} >View</a>
-                            }
-                            <br/><br/>
-                            <h5><b>Full Data</b></h5>
-                            {
-                                this.state.viewText == 2 ? <p> <a href="javascript:void(0)" onClick={()=>this.setState({viewText: 0})}>Hide</a> {JSON.stringify(this.state.jsonData)}</p>  : <a href="javascript:void(0)" onClick={()=>this.setState({viewText: 2})} >View</a>
-                            }
-                            <br/><br/>
-                            <h5><b>Full Json Data</b></h5>
-                            {
-                                this.state.viewText == 3 ? <p> <a href="javascript:void(0)" onClick={()=>this.setState({viewText: 0})}>Hide</a> {JSON.stringify(tableDetailView)}</p>  : <a href="javascript:void(0)" onClick={()=>this.setState({viewText: 3})} >View</a>
-                            }
-                            <br/><br/>
 
-                            <h5><b>Rule for Node</b></h5>
-                            {
-                                this.state.viewText == 4 ? <p> <a href="javascript:void(0)" onClick={()=>this.setState({viewText: 0})}>Hide</a> {JSON.stringify(this.state.tableRules)}</p>  : <a href="javascript:void(0)" onClick={()=>this.setState({viewText: 4})} >View</a>
-                            }
+                    {this.state.hideSection3 == false ?
+                        <div className={"col-sm-3"}>
+                            <div className="content-viewer" style={{ overflow: "auto", marginRight: 20, wordWrap: 'break-word'}}>
+
+                                <div className={"row"}>
+                                    <h5><b>Full Path</b></h5>
+                                    <div style={{marginLeft : "auto"}}>
+                                        {
+                                            this.state.hideSection3 == false ? <p> <a href="javascript:void(0)" onClick={()=>this.hideSection3("hide3")}>Hide</a> </p>  : <a href="javascript:void(0)" onClick={()=>this.setState({viewText: 1})} >View</a>
+                                        }
+                                    </div>
+                                </div>
+                                {
+                                    this.state.viewText == 1 ? <p> <a href="javascript:void(0)" onClick={()=>this.setState({viewText: 0})}>Hide</a> {JSON.stringify(this.state.pathHierarchy)}</p>  : <a href="javascript:void(0)" onClick={()=>this.setState({viewText: 1})} >View</a>
+                                }
+                                <br/><br/>
+                                <h5><b>Full Data</b></h5>
+                                {
+                                    this.state.viewText == 2 ? <p> <a href="javascript:void(0)" onClick={()=>this.setState({viewText: 0})}>Hide</a> {JSON.stringify(this.state.jsonData)}</p>  : <a href="javascript:void(0)" onClick={()=>this.setState({viewText: 2})} >View</a>
+                                }
+                                <br/><br/>
+                                <h5><b>Full Json Data</b></h5>
+                                {
+                                    this.state.viewText == 3 ? <p> <a href="javascript:void(0)" onClick={()=>this.setState({viewText: 0})}>Hide</a> {JSON.stringify(tableDetailView)}</p>  : <a href="javascript:void(0)" onClick={()=>this.setState({viewText: 3})} >View</a>
+                                }
+                                <br/><br/>
+
+                                <h5><b>Rule for Node</b></h5>
+                                {
+                                    this.state.viewText == 4 ? <p> <a href="javascript:void(0)" onClick={()=>this.setState({viewText: 0})}>Hide</a> {JSON.stringify(this.state.tableRules)}</p>  : <a href="javascript:void(0)" onClick={()=>this.setState({viewText: 4})} >View</a>
+                                }
+                            </div>
                         </div>
-                    </div>
+                        : null}
                 </div>
             </div>
         )
