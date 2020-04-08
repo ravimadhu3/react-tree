@@ -76,25 +76,41 @@ class CustomJsonViewer extends React.Component {
         let tableData = jsonData
         if(path.length > 0) {
             for(let k = path.length - 1; k >= 0  ; k--){
-                console.warn(path.length + "Path ---> " + k + "--->" + path[k])
-                /*if(path[k] == "root"){
-                    break
-                } else  {
-                    console.warn("Path ---> " + k + "--->" + path[k] + ", tableRules :" +  JSON.stringify(tableRules))
-                }*/
-                if(tableRules != undefined && path[k] != "root") {
-                    tableRules = tableRules[path[k]]
-                }
-            }
-        }
-        if(path.length > 0) {
-            for(let k = path.length - 1; k >= 0  ; k--){
-                console.warn(path.length + "Path ---> " + k + "--->" + path[k])
                 if(tableData != undefined && path[k] != "root") {
                     tableData = tableData[path[k]]
                 }
+                if(k != 0)
+                    if(tableRules != undefined && path[k] != "root") {
+                        if(Array.isArray(tableRules))
+                        {
+                            tableRules = tableRules[0]
+                        }
+                        else {
+                            tableRules = tableRules[path[k]]
+                        }
+                    }
             }
             this.setTableData("", tableData)
+        }
+        if(tableRules!=undefined )
+        {
+            if(Array.isArray(tableRules))
+            {
+                tableRules = tableRules[0]
+            }
+            else
+            {
+                tableRules = tableRules[path[0]]
+            }
+        }
+        if(!isNaN(parseInt(path)))
+        {
+            var idx = 0;
+            var key = Object.keys(tableData)[idx];
+            if(typeof tableData[key] === 'string' && tableData[key]!=undefined)
+            {
+                path[0] = tableData[key]
+            }
         }
         this.setState({pathHierarchy : path, tableRules : tableRules})
     }
@@ -206,17 +222,19 @@ class CustomJsonViewer extends React.Component {
                     }
                 }
 
-                var component = <tr><td>{key}</td><td style={{display : "inline-flex", width: "100%"}}>
-                    <input type="text" name={""} disabled={disabled} value={tableData[key]} onChange={(e) => {
-                        tableData[key] = e.target.value
-                        this.setState({
-                            tableData: tableData
-                        })
-                    }
-                    }/>
-
-
-                    {ddValueSelectBox} { fileUpload} </td></tr>;
+                var component = <tr>
+                    <td>{key}</td>
+                    <td style={{display : "inline-flex", width: "100%"}}>
+                        <input type="text" name={""} disabled={disabled} value={tableData[key]} onChange={(e) => {
+                            tableData[key] = e.target.value
+                            this.setState({
+                                tableData: tableData
+                            })
+                        }
+                        }/>
+                        {ddValueSelectBox} { fileUpload}
+                    </td>
+                </tr>;
 
                 tableContent.push(component)
             }
@@ -251,7 +269,7 @@ class CustomJsonViewer extends React.Component {
                             {
                                 Object.keys(this.state.jsonData).length > 0 ? <JSONTree data={this.state.jsonData}
                                     //hideRoot={true}
-                                                                                        shouldExpandNode={()=>false}
+                                    //                                                     shouldExpandNode={()=>false}
                                                                                         theme={{
                                                                                             scheme: 'monokai',
                                                                                             author: 'wimer hazenberg (http://www.monokai.nl)',
@@ -280,7 +298,7 @@ class CustomJsonViewer extends React.Component {
                             <h2><b>{this.state.pathHierarchy.length > 0 ? this.state.pathHierarchy[0] : null}</b></h2><br/>
                             {
                                 tableContent.length>0 ? <table border="1" cellPadding={"15"} style={this.state.hideSection3 === false ? {width : "auto"} : {width : "100%"}}>
-                                    <tr><td style={{fontWeight: 'bold'}}>Key</td><td style={{fontWeight: 'bold'}}>Value</td></tr>
+                                    <tr><td style={{fontWeight: "bold",  background: "#6e99e6", color: "#fff", textAlign: "center" }}>Key</td><td style={{fontWeight: "bold",  background: "#6e99e6", color: "#fff", textAlign: "center" }}>Value</td></tr>
                                     {
                                         tableContent
                                     }
