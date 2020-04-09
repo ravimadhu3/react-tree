@@ -112,6 +112,10 @@ class CustomJsonViewer extends React.Component {
                 path[0] = tableData[key]
             }
         }
+        if(path[0] == "fileSchema")
+        {
+            tableRules = tableRules[0]
+        }
         this.setState({pathHierarchy : path, tableRules : tableRules})
     }
 
@@ -182,63 +186,140 @@ class CustomJsonViewer extends React.Component {
         let tableRules = this.state.tableRules;
 
         Object.keys(tableData).forEach((key, index) => {
-            if(!(tableData[key] instanceof Object)) {
+            if(!(tableData[key] instanceof Object) || this.state.pathHierarchy[0] == "fileSchema") {
                 tableDetailView[key] = tableData[key];
+                if(this.state.pathHierarchy[0] == "fileSchema")
+                {
+                    var contentData = []
+                    Object.keys(tableData[key]).forEach(key1=>{
+                        let disabled = "";
+                        let ddValueSelectBox = null;
+                        let fileUpload = null;
 
-                let disabled = "";
-                let ddValueSelectBox = null;
-                let fileUpload = null;
-
-                if(tableRules != undefined && tableRules != null && Object.keys(tableRules).length > 0){
-                    let rules = tableRules[key];
-                    if(rules != undefined && rules != null && Object.keys(rules).length > 0){
-                        if(rules["isEdit"] != undefined && rules["isEdit"] != null){
-                            if(rules["isEdit"] == "No"){
-                                disabled = "disabled"
+                        if(tableRules != undefined && tableRules != null && Object.keys(tableRules).length > 0){
+                            let rules = tableRules[key1];
+                            if(rules != undefined && rules != null && Object.keys(rules).length > 0){
+                                if(rules["isEdit"] != undefined && rules["isEdit"] != null){
+                                    if(rules["isEdit"] == "No"){
+                                        disabled = "disabled"
+                                    }
+                                }
+                                if(rules["ddvalues"] != undefined && rules["ddvalues"] != null && Object.keys(rules["ddvalues"]).length > 0){
+                                    let ddvalues = rules["ddvalues"];
+                                    let ddOptionList = [];
+                                    Object.keys(ddvalues).forEach((key1) => {
+                                        let selectBoxOption = ddvalues[key];
+                                        ddOptionList.push(<option value={selectBoxOption}>{selectBoxOption}</option>)
+                                    });
+                                    if(ddOptionList.length>0){
+                                        ddValueSelectBox = <select name="" id="" onChange={(e) => {
+                                            tableData[key1] = e.target.value
+                                            this.setState({
+                                                tableData: tableData
+                                            })
+                                        }}>
+                                            <option value="">Select</option>
+                                            {ddOptionList}
+                                        </select>
+                                    }
+                                }
+                                if(rules["fileUploadUrl"] != undefined && rules["fileUploadUrl"] != null && rules["fileUploadUrl"] != "") {
+                                    fileUpload = <p><input type="file" onChange={(event) => this.handleChangeFile(event, rules["fileUploadUrl"])}/></p>
+                                }
                             }
                         }
-                        if(rules["ddvalues"] != undefined && rules["ddvalues"] != null && Object.keys(rules["ddvalues"]).length > 0){
-                            let ddvalues = rules["ddvalues"];
-                            let ddOptionList = [];
-                            Object.keys(ddvalues).forEach((key) => {
-                                let selectBoxOption = ddvalues[key];
-                                ddOptionList.push(<option value={selectBoxOption}>{selectBoxOption}</option>)
-                            });
-                            if(ddOptionList.length>0){
-                                ddValueSelectBox = <select name="" id="" onChange={(e) => {
-                                    tableData[key] = e.target.value
+                        contentData.push(
+                            <td style={{ width: "100%"}}>
+                                <input type="text" name={""} disabled={disabled} value={tableData[key][key1]} onChange={(e) => {
+                                    tableData[key][key1] = e.target.value
                                     this.setState({
                                         tableData: tableData
                                     })
-                                }}>
-                                    <option value="">Select</option>
-                                    {ddOptionList}
-                                </select>
+                                }
+                                }/>
+                                {
+                                    ddValueSelectBox!=null || fileUpload!=null ?
+                                        <br/>
+                                        :
+                                        null
+                                }
+                                {ddValueSelectBox} {fileUpload}
+                            </td>
+                        )
+                    })
+                    tableContent.push(<tr>
+                        {contentData}
+                    </tr>)
+                }
+                else {
+                    let disabled = "";
+                    let ddValueSelectBox = null;
+                    let fileUpload = null;
+
+                    if(tableRules != undefined && tableRules != null && Object.keys(tableRules).length > 0){
+                        let rules = tableRules[key];
+                        if(rules != undefined && rules != null && Object.keys(rules).length > 0){
+                            if(rules["isEdit"] != undefined && rules["isEdit"] != null){
+                                if(rules["isEdit"] == "No"){
+                                    disabled = "disabled"
+                                }
+                            }
+                            if(rules["ddvalues"] != undefined && rules["ddvalues"] != null && Object.keys(rules["ddvalues"]).length > 0){
+                                let ddvalues = rules["ddvalues"];
+                                let ddOptionList = [];
+                                Object.keys(ddvalues).forEach((key) => {
+                                    let selectBoxOption = ddvalues[key];
+                                    ddOptionList.push(<option value={selectBoxOption}>{selectBoxOption}</option>)
+                                });
+                                if(ddOptionList.length>0){
+                                    ddValueSelectBox = <select name="" id="" onChange={(e) => {
+                                        tableData[key] = e.target.value
+                                        this.setState({
+                                            tableData: tableData
+                                        })
+                                    }}>
+                                        <option value="">Select</option>
+                                        {ddOptionList}
+                                    </select>
+                                }
+                            }
+                            if(rules["fileUploadUrl"] != undefined && rules["fileUploadUrl"] != null && rules["fileUploadUrl"] != "") {
+                                fileUpload = <p><input type="file" onChange={(event) => this.handleChangeFile(event, rules["fileUploadUrl"])}/></p>
                             }
                         }
-                        if(rules["fileUploadUrl"] != undefined && rules["fileUploadUrl"] != null && rules["fileUploadUrl"] != "") {
-                            fileUpload = <p><input type="file" onChange={(event) => this.handleChangeFile(event, rules["fileUploadUrl"])}/></p>
-                        }
                     }
+                    var component = <tr>
+                        <td>{key}</td>
+                        <td style={{display : "inline-flex", width: "100%"}}>
+                            <input type="text" name={""} disabled={disabled} value={tableData[key]} onChange={(e) => {
+                                tableData[key] = e.target.value
+                                this.setState({
+                                    tableData: tableData
+                                })
+                            }
+                            }/>
+                            {ddValueSelectBox} { fileUpload}
+                        </td>
+                    </tr>;
+                    tableContent.push(component)
                 }
-
-                var component = <tr>
-                    <td>{key}</td>
-                    <td style={{display : "inline-flex", width: "100%"}}>
-                        <input type="text" name={""} disabled={disabled} value={tableData[key]} onChange={(e) => {
-                            tableData[key] = e.target.value
-                            this.setState({
-                                tableData: tableData
-                            })
-                        }
-                        }/>
-                        {ddValueSelectBox} { fileUpload}
-                    </td>
-                </tr>;
-
-                tableContent.push(component)
             }
         });
+
+        var fileSchemaFields = []
+        if(this.state.pathHierarchy[0] == "fileSchema")
+        {
+            Object.keys(tableData[0]).forEach(key=>{
+                fileSchemaFields.push(
+                    <td style={{fontWeight: "bold",  background: "#6e99e6", color: "#fff", textAlign: "center" }}>
+                        {
+                            key
+                        }
+                    </td>
+                )
+            })
+        }
+
         return (
             <div>
                 <div className={"row"}>
@@ -273,8 +354,7 @@ class CustomJsonViewer extends React.Component {
                                                                                         theme={{
                                                                                             scheme: 'monokai',
                                                                                             author: 'wimer hazenberg (http://www.monokai.nl)',
-                                                                                            base00: '#272822',
-                                                                                            valueLabel: {
+                                                                                            base00: '#272822',                                                                                           valueLabel: {
                                                                                                 display :"none",
                                                                                             },
                                                                                             value: {
@@ -297,12 +377,32 @@ class CustomJsonViewer extends React.Component {
                         <div className="content-viewer" style={{ overflow: "auto", marginRight: 20}}>
                             <h2><b>{this.state.pathHierarchy.length > 0 ? this.state.pathHierarchy[0] : null}</b></h2><br/>
                             {
-                                tableContent.length>0 ? <table border="1" cellPadding={"15"} style={this.state.hideSection3 === false ? {width : "auto"} : {width : "100%"}}>
-                                    <tr><td style={{fontWeight: "bold",  background: "#6e99e6", color: "#fff", textAlign: "center" }}>Key</td><td style={{fontWeight: "bold",  background: "#6e99e6", color: "#fff", textAlign: "center" }}>Value</td></tr>
-                                    {
-                                        tableContent
-                                    }
-                                </table> : null
+                                this.state.pathHierarchy[0] == "fileSchema" ?
+                                    tableContent.length>0 ?
+                                        <table border="1" cellPadding={"15"} style={this.state.hideSection3 === false ? {width : "auto"} : {width : "100%"}}>
+                                            <tr>
+                                                {
+                                                    fileSchemaFields
+                                                }
+                                            </tr>
+                                            {
+                                                tableContent
+                                            }
+                                        </table>
+                                        :
+                                        null
+                                    :
+                                    this.state.pathHierarchy[0] != "fileSchema" ?
+                                        tableContent.length>0 ? <table border="1" cellPadding={"15"} style={this.state.hideSection3 === false ? {width : "auto"} : {width : "100%"}}>
+                                                <tr><td style={{fontWeight: "bold",  background: "#6e99e6", color: "#fff", textAlign: "center" }}>Key</td><td style={{fontWeight: "bold",  background: "#6e99e6", color: "#fff", textAlign: "center" }}>Value</td></tr>
+                                                {
+                                                    tableContent
+                                                }
+                                            </table>
+                                            :
+                                            null
+                                        :
+                                        null
                             }
                         </div>
                     </div>
